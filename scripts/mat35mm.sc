@@ -18,13 +18,21 @@ import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 object Url {
   val Base = "http://www.mat.cz"
   val Program = s"$Base/matclub/cz/kino/mesicni-program"
 }
 
-case class Screening(name: String, detailUrl: String)
+case class Screening(name: String, detailUrl: String, dates: Seq[String] = Seq.empty) {
+  override def equals(obj: scala.Any) = obj match {
+    case other: Screening => this.detailUrl == other.detailUrl
+    case _ => false
+  }
+
+  override def hashCode() = detailUrl.hashCode
+}
 
 val browser = JsoupBrowser()
 
@@ -46,25 +54,33 @@ def fetchScreenings(programUrl: String): Seq[Screening] = {
   }
 
   // recursively iterate through all future screenings and remove duplicates
-  impl(programUrl, Seq.empty).groupBy(_.detailUrl).map(_._2.head)(collection.breakOut)
+  mutable.LinkedHashSet(impl(programUrl, Seq.empty): _*).toList
 }
 
-def checkIf35mm(screening: Screening): Boolean = {
-  val doc = browser.get(screening.detailUrl)
-  val format = doc >> text(".hrajemetab > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(4)")
 
-  format.contains("35mm")
+def find35mmScreenings(screening: Screening): Option[Screening] = {
+  val doc = browser.get(screening.detailUrl)
+  val screenings35mm = (doc >> table(".hrajemetab")).filter(_ (3).innerHtml.contains("35mm"))
+
+  if (screenings35mm.nonEmpty) {
+    val dateTimes = screenings35mm.map { screening =>
+      val dateInfo = screening(0).innerHtml
+      val timeInfo = screening(1).innerHtml
+      dateInfo + " " + timeInfo
+    }
+    Some(screening.copy(dates = dateTimes))
+  } else None
 }
 
 
 log(s"Fetching list of all future screenings: ${Url.Program}")
 val screenings = fetchScreenings(Url.Program)
 
-val pbar = new ProgressBar("] Checking 35mm screenings", screenings.size)
-val screenings35mm = screenings.filter { screening =>
-  pbar.setExtraMessage(s"Checking movie: ${screening.name}")
+val pbar = new ProgressBar("] Looking for 35mm screenings", screenings.size)
+val screenings35mm = screenings.flatMap { screening =>
+  pbar.setExtraMessage(screening.name)
   pbar.step()
-  checkIf35mm(screening)
+  find35mmScreenings(screening)
 }
 pbar.setExtraMessage("finished")
 pbar.close()
@@ -72,6 +88,9 @@ pbar.close()
 println()
 log(s"Following ${screenings35mm.size} of ${screenings.size} upcoming screenings are in 35mm:")
 screenings35mm.zipWithIndex.foreach { case (screening, idx) =>
-  printf("%2d", idx + 1)
+  printf("  %2d", idx + 1)
   println(s"/ ${screening.name} (${screening.detailUrl})")
+  screening.dates.zipWithIndex.foreach { case (date, idx2) =>
+    println(s"        #${idx2 + 1}: $date")
+  }
 }
