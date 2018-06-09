@@ -40,7 +40,7 @@ val browser = JsoupBrowser()
 
 def log(msg: Any): Unit = println("] " + msg)
 def fullUrl(path: String): String = Url.Base + path
-def magenta(text: Str): Str = Color.Magenta(text).overlay(Bold.On)
+def greenB(text: Str): Str = Color.Green(text).overlay(Bold.On)
 def boldNum(num: Int): Str = Color.Reset(num.toString).overlay(Bold.On)
 
 def fetchScreenings(programUrl: String): Seq[Screening] = {
@@ -90,11 +90,16 @@ pbar.setExtraMessage("finished")
 pbar.close()
 
 println()
-log(s"Following ${boldNum(screenings35mm.size)} of ${boldNum(screenings.size)} upcoming screenings are in 35mm:")
-screenings35mm.zipWithIndex.foreach { case (screening, idx) =>
-  printf("  %2d", idx + 1)
-  println(s"/ ${magenta(screening.name)} (${screening.detailUrl})")
-  screening.dates.zipWithIndex.foreach { case (date, idx2) =>
-    println(s"        #${idx2 + 1}: $date")
+if (screenings35mm.nonEmpty) {
+  log(s"Following ${boldNum(screenings35mm.size)} of ${boldNum(screenings.size)} upcoming screenings are in 35mm:")
+  screenings35mm.zipWithIndex.foreach { case (screening, idx) =>
+    printf("  %2d", idx + 1)
+    println(s"/ ${greenB(screening.name)} (${screening.detailUrl})")
+    screening.dates.zipWithIndex.foreach { case (date, idx2) =>
+      println(s"        #${idx2 + 1}: $date")
+    }
   }
+} else {
+  log(Color.Red("No upcoming 35mm screenings found ಥ_ಥ"))
 }
+
