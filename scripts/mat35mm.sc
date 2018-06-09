@@ -10,8 +10,10 @@
  *   2/ run 'amm mat35mm.sc' in command line
  */
 
+import $ivy.`com.lihaoyi::fansi:0.2.5`
 import $ivy.`me.tongfei:progressbar:0.7.0`
 import $ivy.`net.ruippeixotog::scala-scraper:2.1.0`
+import fansi._
 import me.tongfei.progressbar.ProgressBar
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
@@ -38,6 +40,8 @@ val browser = JsoupBrowser()
 
 def log(msg: Any): Unit = println("] " + msg)
 def fullUrl(path: String): String = Url.Base + path
+def yellow(text: Str): Str = Color.Magenta(text).overlay(Bold.On)
+def boldNum(num: Int): Str = Color.Reset(num.toString).overlay(Bold.On)
 
 def fetchScreenings(programUrl: String): Seq[Screening] = {
   @tailrec def impl(url: String, aggr: Seq[Screening]): Seq[Screening] = {
@@ -86,10 +90,10 @@ pbar.setExtraMessage("finished")
 pbar.close()
 
 println()
-log(s"Following ${screenings35mm.size} of ${screenings.size} upcoming screenings are in 35mm:")
+log(s"Following ${boldNum(screenings35mm.size)} of ${boldNum(screenings.size)} upcoming screenings are in 35mm:")
 screenings35mm.zipWithIndex.foreach { case (screening, idx) =>
   printf("  %2d", idx + 1)
-  println(s"/ ${screening.name} (${screening.detailUrl})")
+  println(s"/ ${yellow(screening.name)} (${screening.detailUrl})")
   screening.dates.zipWithIndex.foreach { case (date, idx2) =>
     println(s"        #${idx2 + 1}: $date")
   }
