@@ -41,7 +41,8 @@ val browser = JsoupBrowser()
 def log(msg: Any): Unit = println("] " + msg)
 def fullUrl(path: String): String = Url.Base + path
 def greenB(text: Str): Str = Color.Green(text).overlay(Bold.On)
-def boldNum(num: Int): Str = Color.Reset(num.toString).overlay(Bold.On)
+def bold(text: Str): Str = Color.Reset(text).overlay(Bold.On)
+def bold(num: Int): Str = bold(num.toString)
 
 def fetchScreenings(programUrl: String): Seq[Screening] = {
   @tailrec def impl(url: String, aggr: Seq[Screening]): Seq[Screening] = {
@@ -77,21 +78,23 @@ def find35mmScreenings(screening: Screening): Option[Screening] = {
 }
 
 
-log(s"Fetching list of all future screenings: ${Url.Program}")
+log(bold(".: Welcome to the Kino MAT 35mm screening checker :."))
+log(s"Fetching list of all upcoming screenings from: ${Url.Program}")
 val screenings = fetchScreenings(Url.Program)
+log(s"Fetched ${bold(screenings.size)} screenings to check")
 
-val pbar = new ProgressBar("] Looking for 35mm screenings", screenings.size)
+val progress = new ProgressBar("] Looking for 35mm screenings", screenings.size)
 val screenings35mm = screenings.flatMap { screening =>
-  pbar.setExtraMessage(screening.name)
-  pbar.step()
+  progress.setExtraMessage(screening.name)
+  progress.step()
   find35mmScreenings(screening)
 }
-pbar.setExtraMessage("finished")
-pbar.close()
+progress.setExtraMessage("finished")
+progress.close()
 
 println()
 if (screenings35mm.nonEmpty) {
-  log(s"Following ${boldNum(screenings35mm.size)} of ${boldNum(screenings.size)} upcoming screenings are in 35mm:")
+  log(s"Following ${bold(screenings35mm.size)} of ${bold(screenings.size)} upcoming screenings are in 35mm:")
   screenings35mm.zipWithIndex.foreach { case (screening, idx) =>
     printf("  %2d", idx + 1)
     println(s"/ ${greenB(screening.name)} (${screening.detailUrl})")
@@ -100,6 +103,6 @@ if (screenings35mm.nonEmpty) {
     }
   }
 } else {
-  log(Color.Red("No upcoming 35mm screenings found ಥ_ಥ"))
+  log(Color.Red(s"None of the upcoming ${screenings.size} screenings is in 35mm ಥ_ಥ"))
 }
 
