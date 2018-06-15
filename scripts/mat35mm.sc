@@ -22,6 +22,8 @@ import net.ruippeixotog.scalascraper.dsl.DSL._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
+val Version = 1
+
 object Url {
   val Base = "http://www.mat.cz"
   val Program = s"$Base/matclub/cz/kino/mesicni-program"
@@ -40,8 +42,8 @@ val browser = JsoupBrowser()
 
 def log(msg: Any): Unit = println("] " + msg)
 def fullUrl(path: String): String = Url.Base + path
-def greenB(text: Str): Str = Color.Green(text).overlay(Bold.On)
-def bold(text: Str): Str = Color.Reset(text).overlay(Bold.On)
+def greenB(text: Str): Str = bold(Color.Green(text))
+def bold(text: Str): Str = text.overlay(Bold.On)
 def bold(num: Int): Str = bold(num.toString)
 
 def fetchScreenings(programUrl: String): Seq[Screening] = {
@@ -78,7 +80,7 @@ def find35mmScreenings(screening: Screening): Option[Screening] = {
 }
 
 
-log(bold(".: Welcome to the Kino MAT 35mm screening checker :."))
+log(bold(s".: Welcome to the Kino MAT 35mm screening checker v$Version :."))
 log(s"Fetching list of all upcoming screenings from: ${Url.Program}")
 val screenings = fetchScreenings(Url.Program)
 log(s"Fetched ${bold(screenings.size)} screenings to check")
