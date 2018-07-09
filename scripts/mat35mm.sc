@@ -15,21 +15,21 @@ import $ivy.`me.tongfei:progressbar:0.7.0`
 import $ivy.`net.ruippeixotog::scala-scraper:2.1.0`
 import fansi._
 import me.tongfei.progressbar.ProgressBar
-import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+import net.ruippeixotog.scalascraper.browser.{HtmlUnitBrowser, JsoupBrowser}
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-val Version = 1
+val Version = 2
 
 object Url {
   val Base = "http://www.mat.cz"
   val Program = s"$Base/matclub/cz/kino/mesicni-program"
 }
 
-case class Screening(name: String, detailUrl: String, dates: Seq[String] = Seq.empty) {
+case class Screening(name: String, detailUrl: String, details: Seq[ScreeningDetails] = Seq.empty) {
   override def equals(obj: scala.Any) = obj match {
     case other: Screening => this.detailUrl == other.detailUrl
     case _ => false
@@ -38,7 +38,12 @@ case class Screening(name: String, detailUrl: String, dates: Seq[String] = Seq.e
   override def hashCode() = detailUrl.hashCode
 }
 
+case class Seats(available: Int, total: Int)
+
+case class ScreeningDetails(dateTime: String, seats: Seats)
+
 val browser = JsoupBrowser()
+val htmlUnitBrowser = new HtmlUnitBrowser()
 
 def log(msg: Any): Unit = println("] " + msg)
 def fullUrl(path: String): String = Url.Base + path
@@ -70,13 +75,24 @@ def find35mmScreenings(screening: Screening): Option[Screening] = {
   val screenings35mm = (doc >> table(".hrajemetab")).filter(_ (3).innerHtml.contains("35mm"))
 
   if (screenings35mm.nonEmpty) {
-    val dateTimes = screenings35mm.map { screening =>
-      val dateInfo = screening(0).innerHtml
-      val timeInfo = screening(1).innerHtml
-      dateInfo + " " + timeInfo
+    val screeningDetails = screenings35mm.map { screeningTable =>
+      val dateInfo = screeningTable(0).innerHtml
+      val timeInfo = screeningTable(1).innerHtml
+      val seatsReservationUrl = screeningTable(4) >> element("a.disdata") >> attr("href")
+      val seats = seatsInfo(seatsReservationUrl)
+
+      ScreeningDetails(dateInfo + " " + timeInfo, seats)
     }
-    Some(screening.copy(dates = dateTimes))
+    Some(screening.copy(details = screeningDetails))
   } else None
+}
+
+def seatsInfo(seatsReservationUrl: String): Seats = {
+  val doc = htmlUnitBrowser.get(seatsReservationUrl)
+  val allSeats = doc >> elementList("#plocha .sedacka")
+  val availableSeats = allSeats.filter(element => (element >> attr("src")).contains("boxgray"))
+
+  Seats(availableSeats.size, allSeats.size)
 }
 
 
@@ -100,11 +116,13 @@ if (screenings35mm.nonEmpty) {
   screenings35mm.zipWithIndex.foreach { case (screening, idx) =>
     printf("  %2d", idx + 1)
     println(s"/ ${greenB(screening.name)} (${screening.detailUrl})")
-    screening.dates.zipWithIndex.foreach { case (date, idx2) =>
-      println(s"        #${idx2 + 1}: $date")
+    screening.details.zipWithIndex.foreach { case (detail, idx2) =>
+      print(s"        #${idx2 + 1}: ${detail.dateTime}")
+      print(s" (${bold(detail.seats.available)} of ${bold(detail.seats.total)} seats available)")
+      println()
     }
   }
 } else {
-  log(Color.Red(s"None of the upcoming ${screenings.size} screenings is in 35mm ಥ_ಥ"))
+  log(Color.Red(s"No upcoming ${screenings.size} screenings are in 35mm ಥ_ಥ"))
 }
 
