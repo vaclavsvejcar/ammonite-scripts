@@ -8,6 +8,6 @@ This script checks availability of luxury book editions sold by [Argo Bibliofili
 
 
 ## mat35mm ([ => source code](https://github.com/vaclavsvejcar/ammonite-scripts/blob/master/scripts/mat35mm.sc))
-This script fetches all upcoming 35mm film screenings from the Prague [Kino MAT](http://mat.cz) (MAT cinema).
+This script fetches all upcoming 35mm film screenings from the [Kino MAT](http://mat.cz) (MAT cinema) in Prague.
 
 ![mat35mm example](https://github.com/vaclavsvejcar/ammonite-scripts/raw/master/assets/images/screen-mat35mm.png)
