@@ -123,6 +123,6 @@ if (screenings35mm.nonEmpty) {
     }
   }
 } else {
-  log(Color.Red(s"No upcoming ${screenings.size} screenings are in 35mm ಥ_ಥ"))
+  log(Color.Red(s"None of upcoming ${screenings.size} screenings is in 35mm ಥ_ಥ"))
 }
 
