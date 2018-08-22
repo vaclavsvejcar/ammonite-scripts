@@ -11,7 +11,7 @@
  */
 
 import $ivy.`com.lihaoyi::fansi:0.2.5`
-import $ivy.`me.tongfei:progressbar:0.7.0`
+import $ivy.`me.tongfei:progressbar:0.7.1`
 import $ivy.`net.ruippeixotog::scala-scraper:2.1.0`
 import fansi._
 import me.tongfei.progressbar.ProgressBar
