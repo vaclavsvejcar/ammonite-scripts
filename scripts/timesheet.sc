@@ -12,6 +12,7 @@
 
 import scala.annotation.tailrec
 import scala.io.StdIn
+import scala.util.Random
 
 val Version = 1
 
@@ -57,7 +58,7 @@ def generateNumbers(count: Int, lowerBound: Double,
     }
   }
 
-  scala.util.Random.shuffle(impl(Seq.empty, lowerBound, upperBound, sum))
+  Random.shuffle(impl(Seq.empty, lowerBound, upperBound, sum))
 }
 
 log(s"Welcome to the Timesheet generator v$Version")
